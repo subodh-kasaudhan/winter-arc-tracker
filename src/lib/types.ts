@@ -11,6 +11,22 @@ export type HabitIcon =
   | 'drop'
   | 'pen'
   | 'flame'
+  | 'coffee'
+  | 'bike'
+  | 'heart'
+  | 'bed'
+  | 'apple'
+  | 'code'
+  | 'music'
+  | 'phone'
+  | 'stretch'
+  | 'walk'
+  | 'shower'
+  | 'mountain'
+  | 'snow'
+  | 'target'
+  | 'utensils'
+  | 'brain'
 
 export type Habit = {
   id: string

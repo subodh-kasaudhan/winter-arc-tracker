@@ -1,10 +1,4 @@
-import {
-  dayShort,
-  hasCheckin,
-  isFuture,
-  isInArc,
-  isScheduled,
-} from '../lib/dates'
+import { canToggleDate, dayShort, hasCheckin, isScheduled } from '../lib/dates'
 import type { Checkin, Habit } from '../lib/types'
 
 export function WeekDots({
@@ -25,14 +19,14 @@ export function WeekDots({
       {dates.map((date) => {
         const scheduled = isScheduled(habit, date)
         const done = hasCheckin(checkins, habit.id, date)
-        const locked = isFuture(date, today) || !isInArc(date) || !scheduled
+        const locked = !canToggleDate(date, today)
         return (
           <button
             key={date}
             type="button"
             disabled={locked}
             onClick={() => onToggle(date)}
-            className="flex flex-1 flex-col items-center gap-1.5 disabled:cursor-default"
+            className="flex flex-1 flex-col items-center gap-1.5 disabled:cursor-not-allowed"
             aria-label={`${habit.name} ${date}`}
           >
             <span className="text-[11px] font-semibold text-muted">

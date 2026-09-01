@@ -8,6 +8,20 @@ function hexToSoft(hex: string): string {
   return `${hex}1a`
 }
 
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" aria-hidden>
+      <path
+        d="M4 20h4l10-10-4-4L4 16v4Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path d="M12 6l4 4" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  )
+}
+
 export function HabitCard({
   habit,
   checkins,
@@ -37,18 +51,15 @@ export function HabitCard({
       style={{ background: pastel ? hexToSoft(habit.color) : '#fff' }}
     >
       <div className="flex items-start gap-3">
-        <button
-          type="button"
-          onClick={onEdit}
+        <div
           className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white"
           style={{ color: habit.color }}
-          aria-label={`Edit ${habit.name}`}
         >
           <HabitGlyph name={habit.icon} className="h-6 w-6" />
-        </button>
+        </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <div>
+            <div className="min-w-0">
               <h3 className="truncate text-[17px] font-extrabold text-ink">
                 {habit.name}
               </h3>
@@ -57,38 +68,48 @@ export function HabitCard({
                 {streak} {streak === 1 ? 'Day' : 'Days'}
               </p>
             </div>
-            {tab === 'today' ? (
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                onClick={() => onToggle(today)}
-                className="grid h-10 w-10 place-items-center rounded-full"
-                style={{
-                  background: todayDone ? habit.color : `${habit.color}33`,
-                }}
-                aria-label={todayDone ? 'Mark incomplete' : 'Mark complete'}
+                onClick={onEdit}
+                className="grid h-8 w-8 place-items-center rounded-full bg-white text-muted shadow-sm"
+                aria-label={`Edit ${habit.name}`}
               >
-                {todayDone ? (
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
-                    <path
-                      d="M5 12.5 9.5 17 19 7"
-                      stroke="white"
-                      strokeWidth="2.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                ) : null}
+                <PencilIcon />
               </button>
-            ) : (
-              <span className="max-w-[42%] text-right text-[11px] font-bold leading-snug text-muted">
-                {frequencyLabel(habit)}
-              </span>
-            )}
+              {tab === 'today' ? (
+                <button
+                  type="button"
+                  onClick={() => onToggle(today)}
+                  className="grid h-10 w-10 place-items-center rounded-full"
+                  style={{
+                    background: todayDone ? habit.color : `${habit.color}33`,
+                  }}
+                  aria-label={todayDone ? 'Mark incomplete' : 'Mark complete'}
+                >
+                  {todayDone ? (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
+                      <path
+                        d="M5 12.5 9.5 17 19 7"
+                        stroke="white"
+                        strokeWidth="2.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  ) : null}
+                </button>
+              ) : (
+                <span className="max-w-[7.5rem] text-right text-[11px] font-bold leading-snug text-muted">
+                  {frequencyLabel(habit)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {tab === 'weekly' ? (
+      {tab === 'today' || tab === 'weekly' ? (
         <WeekDots
           habit={habit}
           dates={weekDates}

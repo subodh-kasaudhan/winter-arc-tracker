@@ -1,10 +1,12 @@
 import { useRef } from 'react'
+import { formatHustlers } from '../lib/visitors'
 
 export function Drawer({
   open,
   onClose,
   visitorCount,
   visitorsReady,
+  visitorsCapped,
   onExport,
   onImport,
   onReset,
@@ -13,6 +15,7 @@ export function Drawer({
   onClose: () => void
   visitorCount: number | null
   visitorsReady: boolean
+  visitorsCapped: boolean
   onExport: () => void
   onImport: (text: string) => void
   onReset: () => void
@@ -36,11 +39,10 @@ export function Drawer({
           </p>
           <h2 className="mt-1 text-2xl font-extrabold text-ink">Your season</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            1 Sep – 31 Dec 2026. September is prep month — build the rhythm
-            before the hard months.
+            1 Sep – 31 Dec 2026.
           </p>
           <p className="mt-2 text-sm text-muted">
-            Progress stays on this device. No login.
+            Progress stays on this device only. Your data is safe with you.
           </p>
         </div>
         <nav className="flex flex-col gap-1 px-4">
@@ -80,16 +82,16 @@ export function Drawer({
         />
         <div className="mt-auto border-t border-line px-5 py-4">
           <p className="text-[11px] font-bold tracking-wide text-muted uppercase">
-            Unique browsers
+            Total hustlers today:
           </p>
           <p className="text-2xl font-extrabold text-ink">
-            {visitorsReady
-              ? (visitorCount ?? 0).toLocaleString()
+            {visitorsReady && visitorCount !== null
+              ? formatHustlers(visitorCount, visitorsCapped)
               : '—'}
           </p>
           <p className="mt-1 text-xs text-muted">
             {visitorsReady
-              ? 'Shared count of first-time visits'
+              ? 'Unique visitors today'
               : 'Goes live after Cloudflare setup'}
           </p>
         </div>

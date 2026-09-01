@@ -1,7 +1,7 @@
 import {
   arcWeekColumns,
+  canToggleDate,
   hasCheckin,
-  isInArc,
   isScheduled,
   monthGrid,
 } from '../lib/dates'
@@ -13,29 +13,26 @@ function Cell({
   checkins,
   today,
   onToggle,
-  dimPrep,
 }: {
   date: string | null
   habit: Habit
   checkins: Checkin[]
   today: string
   onToggle: (date: string) => void
-  dimPrep?: boolean
 }) {
   if (!date) {
-    return <span className="h-3 w-3 rounded-[4px] bg-transparent" />
+    return <span className="h-4 w-4 rounded-[5px] bg-transparent lg:h-5 lg:w-5" />
   }
   const scheduled = isScheduled(habit, date)
   const done = hasCheckin(checkins, habit.id, date)
-  const locked = date > today || !isInArc(date) || !scheduled
-  const prep = dimPrep && date.startsWith('2026-09')
+  const locked = !canToggleDate(date, today)
   return (
     <button
       type="button"
       disabled={locked}
-      title={date}
+      title={locked ? `${date} (future)` : date}
       onClick={() => onToggle(date)}
-      className="h-3 w-3 rounded-[4px] disabled:cursor-default"
+      className="h-4 w-4 rounded-[5px] disabled:cursor-not-allowed lg:h-5 lg:w-5"
       style={{
         background: done
           ? habit.color
@@ -43,7 +40,7 @@ function Cell({
             ? `${habit.color}26`
             : '#efeae3',
         outline: date === today ? `1.5px solid ${habit.color}` : undefined,
-        opacity: prep && !done ? 0.7 : 1,
+        opacity: locked && !done ? 0.35 : 1,
       }}
     />
   )
@@ -80,7 +77,6 @@ export function MonthHeatmap({
             checkins={checkins}
             today={today}
             onToggle={onToggle}
-            dimPrep={monthKey === '2026-09'}
           />
         ))}
       </div>
@@ -113,7 +109,6 @@ export function ArcHeatmap({
                 checkins={checkins}
                 today={today}
                 onToggle={onToggle}
-                dimPrep
               />
             ))}
           </div>

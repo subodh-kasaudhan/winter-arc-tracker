@@ -4,10 +4,10 @@ export const ARC_START = '2026-09-01'
 export const ARC_END = '2026-12-31'
 
 export const MONTHS = [
-  { key: '2026-09', label: 'September', short: 'Sep', prep: true },
-  { key: '2026-10', label: 'October', short: 'Oct', prep: false },
-  { key: '2026-11', label: 'November', short: 'Nov', prep: false },
-  { key: '2026-12', label: 'December', short: 'Dec', prep: false },
+  { key: '2026-09', label: 'September', short: 'Sep' },
+  { key: '2026-10', label: 'October', short: 'Oct' },
+  { key: '2026-11', label: 'November', short: 'Nov' },
+  { key: '2026-12', label: 'December', short: 'Dec' },
 ] as const
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
@@ -44,6 +44,11 @@ export function isInArc(iso: string): boolean {
 
 export function isFuture(iso: string, today: string): boolean {
   return iso > today
+}
+
+/** Past and today inside the Winter Arc can be toggled. Future days cannot. */
+export function canToggleDate(iso: string, today: string): boolean {
+  return !isFuture(iso, today) && isInArc(iso)
 }
 
 export function dow(iso: string): number {

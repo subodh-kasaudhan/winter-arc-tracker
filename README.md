@@ -1,6 +1,6 @@
 # Winter Arc 2026
 
-Mobile-first habit tracker for 1 Sep – 31 Dec 2026. September is prep month.
+Mobile-first habit tracker for 1 Sep – 31 Dec 2026.
 
 Habit data lives in the browser (`localStorage`). No login. Hosted as a static site on Cloudflare Pages.
 

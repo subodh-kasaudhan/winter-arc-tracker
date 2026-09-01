@@ -6,7 +6,7 @@ import { ProgressPie } from './components/ProgressPie'
 import {
   ARC_END,
   ARC_START,
-  addDays,
+  canToggleDate,
   currentArcMonth,
   monthDates,
   MONTHS,
@@ -16,6 +16,7 @@ import {
 } from './lib/dates'
 import { downloadBackup, importStore, loadStore, resetStore, saveStore } from './lib/storage'
 import type { Habit, Store, Tab } from './lib/types'
+import { loadVisitors } from './lib/visitors'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'today', label: 'Today' },
@@ -32,6 +33,7 @@ export default function App() {
   const [month, setMonth] = useState(() => currentArcMonth(todayLocal()))
   const [visitorCount, setVisitorCount] = useState<number | null>(null)
   const [visitorsReady, setVisitorsReady] = useState(false)
+  const [visitorsCapped, setVisitorsCapped] = useState(false)
   const today = todayLocal()
   const week = useMemo(() => weekDates(today), [today])
 
@@ -40,17 +42,11 @@ export default function App() {
   }, [store])
 
   useEffect(() => {
-    void fetch('/api/visitors')
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((data: { count?: number }) => {
-        if (typeof data.count === 'number') {
-          setVisitorCount(data.count)
-          setVisitorsReady(true)
-        }
-      })
-      .catch(() => {
-        setVisitorsReady(false)
-      })
+    void loadVisitors().then((snapshot) => {
+      setVisitorCount(snapshot.count)
+      setVisitorsReady(snapshot.ready)
+      setVisitorsCapped(snapshot.capped)
+    })
   }, [])
 
   function update(next: Store) {
@@ -58,6 +54,7 @@ export default function App() {
   }
 
   function toggleCheckin(habitId: string, date: string) {
+    if (!canToggleDate(date, today)) return
     const exists = store.checkins.some(
       (c) => c.habitId === habitId && c.date === date,
     )
@@ -93,13 +90,11 @@ export default function App() {
     today,
   )
 
-  const showPrep = today >= ARC_START && today <= addDays(ARC_START, 29)
-
   return (
     <div className="min-h-dvh bg-paper">
-      <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col bg-paper shadow-[0_0_0_1px_rgba(28,25,23,0.04)] md:min-h-[100dvh] md:shadow-xl">
-        <header className="sticky top-0 z-20 bg-paper/95 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur">
-          <div className="flex items-center justify-between">
+      <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-paper shadow-[0_0_0_1px_rgba(28,25,23,0.04)] lg:max-w-none lg:shadow-none">
+        <header className="sticky top-0 z-20 bg-paper/95 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur lg:px-8">
+          <div className="flex items-center justify-between lg:max-w-none">
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
@@ -126,7 +121,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="mt-3 flex rounded-full bg-white p-1 shadow-sm">
+          <div className="mt-3 flex rounded-full bg-white p-1 shadow-sm lg:max-w-md">
             {TABS.map((t) => (
               <button
                 key={t.id}
@@ -142,14 +137,8 @@ export default function App() {
           </div>
         </header>
 
-        <main className="flex flex-1 flex-col gap-3 px-4 pb-28">
-          {showPrep && tab === 'today' ? (
-            <p className="rounded-2xl bg-medal/15 px-3 py-2 text-xs font-bold text-amber-800">
-              September is prep month — build the rhythm first.
-            </p>
-          ) : null}
-
-          <section className="rounded-[28px] bg-white p-4 shadow-[0_8px_24px_rgba(28,25,23,0.06)]">
+        <main className="flex flex-1 flex-col gap-3 px-4 pb-28 lg:px-8">
+          <section className="rounded-[28px] bg-white p-4 shadow-[0_8px_24px_rgba(28,25,23,0.06)] lg:px-6">
             <ProgressPie progress={progress} label={range.label} />
           </section>
 
@@ -165,7 +154,6 @@ export default function App() {
                   }`}
                 >
                   {m.short}
-                  {m.prep ? ' · Prep' : ''}
                 </button>
               ))}
             </div>
@@ -176,26 +164,28 @@ export default function App() {
               No habits yet. Tap + to add one.
             </p>
           ) : (
-            store.habits.map((habit) => (
-              <HabitCard
-                key={habit.id}
-                habit={habit}
-                checkins={store.checkins}
-                today={today}
-                tab={tab}
-                weekDates={week}
-                monthKey={month}
-                onToggle={(date) => toggleCheckin(habit.id, date)}
-                onEdit={() => setForm(habit)}
-              />
-            ))
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
+              {store.habits.map((habit) => (
+                <HabitCard
+                  key={habit.id}
+                  habit={habit}
+                  checkins={store.checkins}
+                  today={today}
+                  tab={tab}
+                  weekDates={week}
+                  monthKey={month}
+                  onToggle={(date) => toggleCheckin(habit.id, date)}
+                  onEdit={() => setForm(habit)}
+                />
+              ))}
+            </div>
           )}
         </main>
 
         <button
           type="button"
           onClick={() => setForm('new')}
-          className="fixed right-[max(1.25rem,calc(50%-240px+1.25rem))] bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 grid h-14 w-14 place-items-center rounded-full bg-leaf text-3xl font-medium text-ink shadow-lg"
+          className="fixed right-5 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 grid h-14 w-14 place-items-center rounded-full bg-leaf text-3xl font-medium text-ink shadow-lg lg:right-8 lg:bottom-8"
           aria-label="Add habit"
         >
           +
@@ -207,6 +197,7 @@ export default function App() {
         onClose={() => setMenuOpen(false)}
         visitorCount={visitorCount}
         visitorsReady={visitorsReady}
+        visitorsCapped={visitorsCapped}
         onExport={() => downloadBackup(store)}
         onImport={(text) => {
           try {
