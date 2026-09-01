@@ -1,9 +1,11 @@
 import type { Checkin, Habit, Progress } from './types'
 
-export const ARC_START = '2026-09-01'
+/** Temporary: August is included so we can test past-month progress before go-live. */
+export const ARC_START = '2026-08-01'
 export const ARC_END = '2026-12-31'
 
 export const MONTHS = [
+  { key: '2026-08', label: 'August', short: 'Aug' },
   { key: '2026-09', label: 'September', short: 'Sep' },
   { key: '2026-10', label: 'October', short: 'Oct' },
   { key: '2026-11', label: 'November', short: 'Nov' },
@@ -46,9 +48,15 @@ export function isFuture(iso: string, today: string): boolean {
   return iso > today
 }
 
-/** Past and today inside the Winter Arc can be toggled. Future days cannot. */
-export function canToggleDate(iso: string, today: string): boolean {
-  return !isFuture(iso, today) && isInArc(iso)
+/** Past and today, in the arc, and on a scheduled weekday. Done days can be cleared. */
+export function canToggleDate(
+  habit: Habit,
+  iso: string,
+  today: string,
+  done = false,
+): boolean {
+  if (isFuture(iso, today) || !isInArc(iso)) return false
+  return isScheduled(habit, iso) || done
 }
 
 export function dow(iso: string): number {
@@ -91,8 +99,8 @@ export function monthKey(iso: string): string {
 }
 
 export function currentArcMonth(today: string): string {
-  if (today < ARC_START) return '2026-09'
-  if (today > ARC_END) return '2026-12'
+  if (today < ARC_START) return MONTHS[0].key
+  if (today > ARC_END) return MONTHS[MONTHS.length - 1].key
   return monthKey(today)
 }
 

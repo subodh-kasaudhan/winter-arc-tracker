@@ -49,12 +49,16 @@ export function HabitForm({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-3 sm:items-center">
-      <div className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-xl">
+      <div className="w-full max-w-md rounded-[28px] bg-card p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-extrabold">
             {initial ? 'Edit habit' : 'New habit'}
           </h2>
-          <button type="button" onClick={onClose} className="text-sm font-bold text-muted">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl px-4 py-3 text-sm font-extrabold text-muted"
+          >
             Close
           </button>
         </div>
@@ -76,8 +80,8 @@ export function HabitForm({
               className="grid h-10 w-10 place-items-center rounded-2xl border"
               style={{
                 color,
-                borderColor: icon === key ? color : '#e7e1d8',
-                background: icon === key ? `${color}22` : '#fff',
+                borderColor: icon === key ? color : 'var(--color-line)',
+                background: icon === key ? `${color}22` : 'var(--color-card)',
               }}
             >
               <HabitGlyph name={key} className="h-5 w-5" />
@@ -119,8 +123,8 @@ export function HabitForm({
               onClick={() => toggleDay(d.value)}
               className="flex-1 rounded-full py-2 text-xs font-extrabold"
               style={{
-                background: !everyday && days.includes(d.value) ? color : '#f6f3ee',
-                color: !everyday && days.includes(d.value) ? '#fff' : '#78716c',
+                background: !everyday && days.includes(d.value) ? color : 'var(--color-paper)',
+                color: !everyday && days.includes(d.value) ? '#fff' : 'var(--color-muted)',
               }}
             >
               {d.label}

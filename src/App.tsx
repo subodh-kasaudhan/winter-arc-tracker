@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
+import { CreditsPage } from './components/CreditsPage'
+import { DataCenter } from './components/DataCenter'
 import { Drawer } from './components/Drawer'
 import { HabitCard } from './components/HabitCard'
 import { HabitForm } from './components/HabitForm'
+import { HomePage } from './components/HomePage'
+import { MadeBy } from './components/MadeBy'
 import { ProgressPie } from './components/ProgressPie'
+import { WinterBurst } from './components/WinterBurst'
+import {
+  hasClockedInToday,
+  loadClock,
+  markClockedIn,
+  markClockSynced,
+} from './lib/clock'
 import {
   ARC_END,
   ARC_START,
@@ -15,8 +26,14 @@ import {
   weekDates,
 } from './lib/dates'
 import { downloadBackup, importStore, loadStore, resetStore, saveStore } from './lib/storage'
-import type { Habit, Store, Tab } from './lib/types'
-import { loadVisitors } from './lib/visitors'
+import { applyTheme, loadTheme, type Theme } from './lib/theme'
+import type { Habit, Page, Store, Tab } from './lib/types'
+import {
+  bumpLocalCount,
+  peekVisitors,
+  syncClockIn,
+  type VisitorSnapshot,
+} from './lib/visitors'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'today', label: 'Today' },
@@ -25,15 +42,24 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'arc', label: 'Arc' },
 ]
 
+const EMPTY_HUSTLERS: VisitorSnapshot = {
+  count: null,
+  ready: false,
+  capped: false,
+}
+
 export default function App() {
   const [store, setStore] = useState<Store>(() => loadStore())
+  const [page, setPage] = useState<Page>('home')
   const [tab, setTab] = useState<Tab>('today')
   const [menuOpen, setMenuOpen] = useState(false)
   const [form, setForm] = useState<Habit | null | 'new'>(null)
   const [month, setMonth] = useState(() => currentArcMonth(todayLocal()))
-  const [visitorCount, setVisitorCount] = useState<number | null>(null)
-  const [visitorsReady, setVisitorsReady] = useState(false)
-  const [visitorsCapped, setVisitorsCapped] = useState(false)
+  const [hustlers, setHustlers] = useState<VisitorSnapshot>(EMPTY_HUSTLERS)
+  const [clockedIn, setClockedIn] = useState(() => hasClockedInToday())
+  const [celebrating, setCelebrating] = useState(() => hasClockedInToday())
+  const [theme, setTheme] = useState<Theme>(() => loadTheme())
+  const [winterBurst, setWinterBurst] = useState(false)
   const today = todayLocal()
   const week = useMemo(() => weekDates(today), [today])
 
@@ -42,19 +68,47 @@ export default function App() {
   }, [store])
 
   useEffect(() => {
-    void loadVisitors().then((snapshot) => {
-      setVisitorCount(snapshot.count)
-      setVisitorsReady(snapshot.ready)
-      setVisitorsCapped(snapshot.capped)
-    })
+    applyTheme(theme)
+  }, [theme])
+
+  useEffect(() => {
+    void peekVisitors().then(setHustlers)
+    const clock = loadClock()
+    if (clock.pendingSync && hasClockedInToday(clock)) {
+      void syncClockIn(hustlers).then((next) => {
+        setHustlers(next)
+        if (next.ready) markClockSynced()
+      })
+    }
+    // Only run on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function update(next: Store) {
     setStore(next)
   }
 
+  function go(next: Page) {
+    setPage(next)
+    setMenuOpen(false)
+  }
+
+  async function handleClockIn() {
+    if (hasClockedInToday()) return
+    markClockedIn(true)
+    setClockedIn(true)
+    setCelebrating(true)
+    const local = bumpLocalCount(hustlers)
+    setHustlers(local)
+    const synced = await syncClockIn(local)
+    setHustlers(synced)
+    if (synced.ready) markClockSynced()
+  }
+
   function toggleCheckin(habitId: string, date: string) {
-    if (!canToggleDate(date, today)) return
+    const habit = store.habits.find((h) => h.id === habitId)
+    const done = store.checkins.some((c) => c.habitId === habitId && c.date === date)
+    if (!habit || !canToggleDate(habit, date, today, done)) return
     const exists = store.checkins.some(
       (c) => c.habitId === habitId && c.date === date,
     )
@@ -110,109 +164,188 @@ export default function App() {
                 />
               </svg>
             </button>
-            <h1 className="text-xl font-extrabold tracking-tight">
-              Winter <span className="text-leaf">Arc</span>
+            <h1 className="text-lg font-extrabold tracking-tight sm:text-xl">
+              Winter Arc <span className="text-leaf">Tracker</span>
             </h1>
-            <div
-              className="grid h-9 w-9 place-items-center rounded-full bg-medal text-sm font-extrabold text-white"
-              title="Winter Arc 2026"
-            >
-              26
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="grid h-9 w-9 place-items-center rounded-full border border-line bg-card text-ink"
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {theme === 'dark' ? (
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+                    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+                    <path
+                      d="M12 3v2M12 19v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M3 12h2M19 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+                    <path
+                      d="M16 3a8 8 0 1 0 5 13 7 7 0 0 1-5-13Z"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (winterBurst) return
+                  setWinterBurst(true)
+                  window.setTimeout(() => setWinterBurst(false), 5000)
+                }}
+                className="grid h-9 w-9 place-items-center rounded-full bg-medal text-white"
+                aria-label="Winter burst"
+                title="Let it snow"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+                  <g
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 3v18" />
+                    <path d="m5.4 7.1 13.2 9.8" />
+                    <path d="m18.6 7.1-13.2 9.8" />
+                    <path d="M9.2 5 12 7.4 14.8 5" />
+                    <path d="M9.2 19 12 16.6 14.8 19" />
+                    <path d="m5 10.8 2.8-.8.8 2.8" />
+                    <path d="m19 13.2-2.8.8-.8-2.8" />
+                    <path d="m19 10.8-2.8-.8-.8 2.8" />
+                    <path d="m5 13.2 2.8.8.8-2.8" />
+                  </g>
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div className="mt-3 flex rounded-full bg-white p-1 shadow-sm lg:max-w-md">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={`min-w-0 flex-1 rounded-full py-2 text-xs font-extrabold transition ${
-                  tab === t.id ? 'bg-leaf text-white' : 'text-muted'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </header>
-
-        <main className="flex flex-1 flex-col gap-3 px-4 pb-28 lg:px-8">
-          <section className="rounded-[28px] bg-white p-4 shadow-[0_8px_24px_rgba(28,25,23,0.06)] lg:px-6">
-            <ProgressPie progress={progress} label={range.label} />
-          </section>
-
-          {tab === 'monthly' ? (
-            <div className="flex gap-1 overflow-x-auto">
-              {MONTHS.map((m) => (
+          {page === 'progress' ? (
+            <div className="mt-3 flex rounded-full bg-card p-1 shadow-sm lg:max-w-md">
+              {TABS.map((t) => (
                 <button
-                  key={m.key}
+                  key={t.id}
                   type="button"
-                  onClick={() => setMonth(m.key)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-extrabold whitespace-nowrap ${
-                    month === m.key ? 'bg-leaf text-white' : 'bg-white text-muted'
+                  onClick={() => setTab(t.id)}
+                  className={`min-w-0 flex-1 rounded-full py-2 text-xs font-extrabold transition ${
+                    tab === t.id ? 'bg-leaf text-white' : 'text-muted'
                   }`}
                 >
-                  {m.short}
+                  {t.label}
                 </button>
               ))}
             </div>
           ) : null}
+        </header>
 
-          {store.habits.length === 0 ? (
-            <p className="py-10 text-center text-sm font-semibold text-muted">
-              No habits yet. Tap + to add one.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-              {store.habits.map((habit) => (
-                <HabitCard
-                  key={habit.id}
-                  habit={habit}
-                  checkins={store.checkins}
-                  today={today}
-                  tab={tab}
-                  weekDates={week}
-                  monthKey={month}
-                  onToggle={(date) => toggleCheckin(habit.id, date)}
-                  onEdit={() => setForm(habit)}
-                />
-              ))}
-            </div>
-          )}
+        <main className="flex flex-1 flex-col gap-3 px-4 pb-28 lg:px-8">
+          {page === 'home' ? (
+            <HomePage
+              hustlers={hustlers}
+              clockedIn={clockedIn}
+              celebrating={celebrating}
+              onClockIn={() => void handleClockIn()}
+              onOpenProgress={() => go('progress')}
+            />
+          ) : null}
+
+          {page === 'credits' ? <CreditsPage /> : null}
+
+          {page === 'data' ? (
+            <DataCenter
+              onExport={() => downloadBackup(store)}
+              onImport={(text) => {
+                try {
+                  update(importStore(text))
+                } catch {
+                  alert('That file is not a valid Winter Arc backup.')
+                }
+              }}
+              onReset={() => {
+                if (confirm('Reset all habits and check-ins on this device?')) {
+                  update(resetStore())
+                }
+              }}
+            />
+          ) : null}
+
+          {page === 'progress' ? (
+            <>
+              <section className="rounded-[28px] bg-card p-4 shadow-[0_8px_24px_rgba(28,25,23,0.06)] lg:px-6">
+                <div className="mb-3 flex justify-end">
+                  <MadeBy />
+                </div>
+                <ProgressPie progress={progress} label={range.label} />
+              </section>
+
+              {tab === 'monthly' ? (
+                <div className="flex gap-1 overflow-x-auto">
+                  {MONTHS.map((m) => (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() => setMonth(m.key)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-extrabold whitespace-nowrap ${
+                        month === m.key ? 'bg-leaf text-white' : 'bg-card text-muted'
+                      }`}
+                    >
+                      {m.short}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {store.habits.length === 0 ? (
+                <p className="py-10 text-center text-sm font-semibold text-muted">
+                  No habits yet. Tap + to add one.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                  {store.habits.map((habit) => (
+                    <HabitCard
+                      key={habit.id}
+                      habit={habit}
+                      checkins={store.checkins}
+                      today={today}
+                      tab={tab}
+                      weekDates={week}
+                      monthKey={month}
+                      onToggle={(date) => toggleCheckin(habit.id, date)}
+                      onEdit={() => setForm(habit)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          ) : null}
         </main>
 
-        <button
-          type="button"
-          onClick={() => setForm('new')}
-          className="fixed right-5 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 grid h-14 w-14 place-items-center rounded-full bg-leaf text-3xl font-medium text-ink shadow-lg lg:right-8 lg:bottom-8"
-          aria-label="Add habit"
-        >
-          +
-        </button>
+        {page === 'progress' ? (
+          <button
+            type="button"
+            onClick={() => setForm('new')}
+            className="fixed right-5 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 grid h-14 w-14 place-items-center rounded-full bg-leaf text-3xl font-medium text-ink shadow-lg lg:right-8 lg:bottom-8"
+            aria-label="Add habit"
+          >
+            +
+          </button>
+        ) : null}
       </div>
 
       <Drawer
         open={menuOpen}
+        page={page}
         onClose={() => setMenuOpen(false)}
-        visitorCount={visitorCount}
-        visitorsReady={visitorsReady}
-        visitorsCapped={visitorsCapped}
-        onExport={() => downloadBackup(store)}
-        onImport={(text) => {
-          try {
-            update(importStore(text))
-            setMenuOpen(false)
-          } catch {
-            alert('That file is not a valid Winter Arc backup.')
-          }
-        }}
-        onReset={() => {
-          if (confirm('Reset all habits and check-ins on this device?')) {
-            update(resetStore())
-            setMenuOpen(false)
-          }
-        }}
+        onGo={go}
+        hustlers={hustlers}
       />
 
       {form ? (
@@ -262,6 +395,8 @@ export default function App() {
           }
         />
       ) : null}
+
+      {winterBurst ? <WinterBurst /> : null}
     </div>
   )
 }

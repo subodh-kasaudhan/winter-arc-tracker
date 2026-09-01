@@ -19,43 +19,44 @@ export function WeekDots({
       {dates.map((date) => {
         const scheduled = isScheduled(habit, date)
         const done = hasCheckin(checkins, habit.id, date)
-        const locked = !canToggleDate(date, today)
+        const locked = !canToggleDate(habit, date, today, done)
         return (
-          <button
-            key={date}
-            type="button"
-            disabled={locked}
-            onClick={() => onToggle(date)}
-            className="flex flex-1 flex-col items-center gap-1.5 disabled:cursor-not-allowed"
-            aria-label={`${habit.name} ${date}`}
-          >
+          <div key={date} className="flex flex-1 flex-col items-center">
             <span className="text-[11px] font-semibold text-muted">
               {dayShort(date)}
             </span>
-            <span
-              className="grid h-9 w-9 place-items-center rounded-full text-white transition"
-              style={{
-                background: done
-                  ? habit.color
-                  : scheduled
-                    ? `${habit.color}33`
-                    : '#ece8e1',
-                opacity: locked && !done ? 0.45 : 1,
-              }}
+            <button
+              type="button"
+              disabled={locked}
+              onClick={() => onToggle(date)}
+              className="mt-0.5 rounded-2xl px-3 py-3 disabled:cursor-not-allowed"
+              aria-label={`${habit.name} ${date}`}
             >
-              {done ? (
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden>
-                  <path
-                    d="M5 12.5 9.5 17 19 7"
-                    stroke="white"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : null}
-            </span>
-          </button>
+              <span
+                className="grid h-9 w-9 place-items-center rounded-full text-white"
+                style={{
+                  background: done
+                    ? habit.color
+                    : scheduled
+                      ? `${habit.color}33`
+                      : '#ece8e1',
+                  opacity: locked && !done ? 0.45 : 1,
+                }}
+              >
+                {done ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden>
+                    <path
+                      d="M5 12.5 9.5 17 19 7"
+                      stroke="white"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : null}
+              </span>
+            </button>
+          </div>
         )
       })}
     </div>

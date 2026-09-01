@@ -50,6 +50,8 @@ export type Store = {
 
 export type Tab = 'today' | 'weekly' | 'monthly' | 'arc'
 
+export type Page = 'home' | 'progress' | 'data' | 'credits'
+
 export type Progress = {
   done: number
   scheduled: number

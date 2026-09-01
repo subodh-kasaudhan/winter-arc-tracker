@@ -1,4 +1,4 @@
-import { frequencyLabel, hasCheckin, streakFor } from '../lib/dates'
+import { canToggleDate, frequencyLabel, hasCheckin, streakFor } from '../lib/dates'
 import { HabitGlyph } from '../lib/icons'
 import type { Checkin, Habit, Tab } from '../lib/types'
 import { ArcHeatmap, MonthHeatmap } from './Heatmap'
@@ -48,11 +48,11 @@ export function HabitCard({
   return (
     <article
       className="rounded-[28px] p-4 shadow-[0_8px_24px_rgba(28,25,23,0.06)]"
-      style={{ background: pastel ? hexToSoft(habit.color) : '#fff' }}
+      style={{ background: pastel ? hexToSoft(habit.color) : 'var(--color-card)' }}
     >
       <div className="flex items-start gap-3">
         <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-card"
           style={{ color: habit.color }}
         >
           <HabitGlyph name={habit.icon} className="h-6 w-6" />
@@ -72,7 +72,7 @@ export function HabitCard({
               <button
                 type="button"
                 onClick={onEdit}
-                className="grid h-8 w-8 place-items-center rounded-full bg-white text-muted shadow-sm"
+                className="grid h-8 w-8 place-items-center rounded-full bg-card text-muted shadow-sm"
                 aria-label={`Edit ${habit.name}`}
               >
                 <PencilIcon />
@@ -80,24 +80,29 @@ export function HabitCard({
               {tab === 'today' ? (
                 <button
                   type="button"
+                  disabled={!canToggleDate(habit, today, today, todayDone)}
                   onClick={() => onToggle(today)}
-                  className="grid h-10 w-10 place-items-center rounded-full"
-                  style={{
-                    background: todayDone ? habit.color : `${habit.color}33`,
-                  }}
+                  className="rounded-2xl px-3 py-3 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label={todayDone ? 'Mark incomplete' : 'Mark complete'}
                 >
-                  {todayDone ? (
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
-                      <path
-                        d="M5 12.5 9.5 17 19 7"
-                        stroke="white"
-                        strokeWidth="2.6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  ) : null}
+                  <span
+                    className="grid h-10 w-10 place-items-center rounded-full"
+                    style={{
+                      background: todayDone ? habit.color : `${habit.color}33`,
+                    }}
+                  >
+                    {todayDone ? (
+                      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
+                        <path
+                          d="M5 12.5 9.5 17 19 7"
+                          stroke="white"
+                          strokeWidth="2.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    ) : null}
+                  </span>
                 </button>
               ) : (
                 <span className="max-w-[7.5rem] text-right text-[11px] font-bold leading-snug text-muted">

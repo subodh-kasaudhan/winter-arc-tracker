@@ -25,12 +25,12 @@ function Cell({
   }
   const scheduled = isScheduled(habit, date)
   const done = hasCheckin(checkins, habit.id, date)
-  const locked = !canToggleDate(date, today)
+  const locked = !canToggleDate(habit, date, today, done)
   return (
     <button
       type="button"
       disabled={locked}
-      title={locked ? `${date} (future)` : date}
+      title={locked ? `${date} (off schedule)` : date}
       onClick={() => onToggle(date)}
       className="h-4 w-4 rounded-[5px] disabled:cursor-not-allowed lg:h-5 lg:w-5"
       style={{

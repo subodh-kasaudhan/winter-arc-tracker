@@ -86,16 +86,23 @@ async function writeCachedStats(stats) {
   }
 }
 
-function markSeen(headers) {
+function markClocked(headers) {
   headers.append(
     'Set-Cookie',
-    `wa_vid=${crypto.randomUUID()}; Max-Age=${COOKIE_MAX_AGE}; Path=/; SameSite=Lax; Secure`,
+    `wa_clock=${crypto.randomUUID()}; Max-Age=${COOKIE_MAX_AGE}; Path=/; SameSite=Lax; Secure`,
   )
 }
 
-export async function onRequestGet(context) {
-  const { request, env } = context
+async function loadStats(env) {
+  const cached = await readCachedStats()
+  if (cached) return { stats: cached, fromCache: true }
+  const stats = normalizeStats(await env.VISITORS.get(STATS_KEY))
+  await writeCachedStats(stats)
+  return { stats, fromCache: false }
+}
 
+export async function onRequestGet(context) {
+  const { env } = context
   if (!env.VISITORS) {
     return json(
       { count: null, ready: false, capped: false },
@@ -104,22 +111,12 @@ export async function onRequestGet(context) {
     )
   }
 
-  const existing = parseCookie(request.headers.get('Cookie'), 'wa_vid')
-  const cached = await readCachedStats()
-
-  // After 1k+, bots and spikes get 1k+ from cache. No KV read or write.
-  if (cached && cached.today >= COUNT_CAP) {
-    return json(payload(cached), { 'Cache-Control': cacheControl(true) })
-  }
-
-  // Returning browser: reuse today's cached count. No KV.
-  if (existing && cached) {
-    return json(payload(cached), { 'Cache-Control': 'private, max-age=60' })
-  }
-
-  let stats
   try {
-    stats = cached ?? normalizeStats(await env.VISITORS.get(STATS_KEY))
+    const { stats } = await loadStats(env)
+    const body = payload(stats)
+    return json(body, {
+      'Cache-Control': body.capped ? cacheControl(true) : cacheControl(false),
+    })
   } catch {
     return json(
       { count: null, ready: false, capped: false },
@@ -127,13 +124,31 @@ export async function onRequestGet(context) {
       503,
     )
   }
+}
 
-  if (stats.today >= COUNT_CAP) {
-    await writeCachedStats(stats)
-    return json(payload(stats), { 'Cache-Control': cacheControl(true) })
+export async function onRequestPost(context) {
+  const { request, env } = context
+  if (!env.VISITORS) {
+    return json(
+      { count: null, ready: false, capped: false },
+      { 'Cache-Control': 'no-store' },
+      503,
+    )
   }
 
-  if (!existing) {
+  const already = parseCookie(request.headers.get('Cookie'), 'wa_clock')
+
+  try {
+    const { stats } = await loadStats(env)
+
+    if (stats.today >= COUNT_CAP) {
+      return json(payload(stats), { 'Cache-Control': cacheControl(true) })
+    }
+
+    if (already) {
+      return json(payload(stats), { 'Cache-Control': 'private, max-age=60' })
+    }
+
     stats.today += 1
     try {
       await env.VISITORS.put(STATS_KEY, JSON.stringify(stats))
@@ -144,19 +159,19 @@ export async function onRequestGet(context) {
         { 'Cache-Control': cacheControl(true) },
       )
     }
-  }
 
-  await writeCachedStats(stats)
-
-  const body = payload(stats)
-  const headers = {
-    'Cache-Control': body.capped ? cacheControl(true) : 'no-store',
+    await writeCachedStats(stats)
+    const body = payload(stats)
+    const res = json(body, {
+      'Cache-Control': body.capped ? cacheControl(true) : 'no-store',
+    })
+    if (!body.capped) markClocked(res.headers)
+    return res
+  } catch {
+    return json(
+      { count: null, ready: false, capped: false },
+      { 'Cache-Control': 'no-store' },
+      503,
+    )
   }
-  const res = json(body, headers)
-  // Only stamp a cookie while we are still counting. After the cap,
-  // skip Set-Cookie so the 1k+ response can stay in the edge cache.
-  if (!existing && !body.capped) {
-    markSeen(res.headers)
-  }
-  return res
 }

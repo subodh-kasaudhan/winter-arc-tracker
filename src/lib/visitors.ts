@@ -1,5 +1,5 @@
-const SESSION_KEY = 'wa_hustlers_session_v1'
-const LAST_KEY = 'wa_hustlers_last_v1'
+const SESSION_KEY = 'wa_hustlers_session_v2'
+const LAST_KEY = 'wa_hustlers_last_v2'
 
 export type VisitorSnapshot = {
   count: number | null
@@ -45,7 +45,19 @@ function remember(snapshot: VisitorSnapshot): void {
   if (snapshot.ready) writeJson(localStorage, LAST_KEY, snapshot)
 }
 
-export async function loadVisitors(): Promise<VisitorSnapshot> {
+function parseBody(data: unknown): VisitorSnapshot | null {
+  if (!data || typeof data !== 'object') return null
+  const body = data as { count?: number; ready?: boolean; capped?: boolean }
+  if (typeof body.count !== 'number') return null
+  return {
+    count: body.count,
+    ready: true,
+    capped: body.capped === true || body.count >= 1000,
+  }
+}
+
+/** Read today's hustler count. Does not add +1. */
+export async function peekVisitors(): Promise<VisitorSnapshot> {
   const session = readJson(sessionStorage, SESSION_KEY)
   if (session) return session
 
@@ -59,31 +71,41 @@ export async function loadVisitors(): Promise<VisitorSnapshot> {
 
   try {
     const res = await fetch('/api/visitors')
-    if (!res.ok) {
-      remember(fallback)
-      return fallback
-    }
-    const data: unknown = await res.json()
-    if (!data || typeof data !== 'object') {
-      remember(fallback)
-      return fallback
-    }
-    const body = data as { count?: number; ready?: boolean; capped?: boolean }
-    if (typeof body.count !== 'number') {
-      remember(fallback)
-      return fallback
-    }
-    const snapshot: VisitorSnapshot = {
-      count: body.count,
-      ready: true,
-      capped: body.capped === true || body.count >= 1000,
-    }
+    if (!res.ok) return fallback
+    const snapshot = parseBody(await res.json())
+    if (!snapshot) return fallback
     remember(snapshot)
     return snapshot
   } catch {
-    remember(fallback)
     return fallback
   }
+}
+
+/** Clock-in sync: asks Cloudflare to add +1 for this UTC day. */
+export async function syncClockIn(
+  previous: VisitorSnapshot,
+): Promise<VisitorSnapshot> {
+  try {
+    const res = await fetch('/api/visitors', { method: 'POST' })
+    if (!res.ok) return previous
+    const snapshot = parseBody(await res.json())
+    if (!snapshot) return previous
+    remember(snapshot)
+    return snapshot
+  } catch {
+    return previous
+  }
+}
+
+export function bumpLocalCount(current: VisitorSnapshot): VisitorSnapshot {
+  if (current.capped) return current
+  const next: VisitorSnapshot = {
+    count: Math.min((current.count ?? 0) + 1, 1000),
+    ready: true,
+    capped: (current.count ?? 0) + 1 >= 1000,
+  }
+  remember(next)
+  return next
 }
 
 export function formatGrinding(count: number, capped = false): string {
