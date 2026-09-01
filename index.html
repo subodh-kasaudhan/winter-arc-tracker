@@ -17,6 +17,11 @@
       rel="stylesheet"
     />
     <title>Winter Arc 2026</title>
+    <script>
+      if (localStorage.getItem('wa_theme') === 'dark') {
+        document.documentElement.classList.add('dark')
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

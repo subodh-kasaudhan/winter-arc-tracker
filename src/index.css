@@ -18,6 +18,35 @@ body,
   min-height: 100dvh;
 }
 
+html.dark {
+  --color-ink: #f4efe8;
+  --color-muted: #a8a29e;
+  --color-paper: #141210;
+  --color-card: #1e1b18;
+  --color-line: #3f3a36;
+  color-scheme: dark;
+}
+
+.winter-burst {
+  background: rgba(8, 16, 22, 0.62);
+  animation: winter-fade 5s ease forwards;
+}
+
+@keyframes winter-fade {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -32,6 +61,61 @@ select {
   font: inherit;
 }
 
+button:not(:disabled),
+a[href]:not(.made-by),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+  transition:
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+button:not(:disabled):hover,
+a[href]:not(.made-by):hover,
+[role="button"]:not([aria-disabled="true"]):hover {
+  box-shadow: 0 6px 18px rgba(28, 25, 23, 0.14);
+}
+
+html.dark button:not(:disabled):hover,
+html.dark a[href]:not(.made-by):hover,
+html.dark [role="button"]:not([aria-disabled="true"]):hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+button:not(:disabled):active,
+a[href]:not(.made-by):active,
+[role="button"]:not([aria-disabled="true"]):active {
+  box-shadow: 0 1px 4px rgba(28, 25, 23, 0.16);
+  transform: translateY(1px);
+}
+
+a.made-by {
+  cursor: pointer;
+  box-shadow: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 #root {
   min-height: 100dvh;
+}
+
+.snowflake {
+  position: absolute;
+  top: -1.5rem;
+  color: #fff;
+  animation-name: snowfall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes snowfall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(110vh) rotate(240deg);
+  }
 }
