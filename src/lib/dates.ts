@@ -1,11 +1,9 @@
 import type { Checkin, Habit, Progress } from './types'
 
-/** Temporary: August is included so we can test past-month progress before go-live. */
-export const ARC_START = '2026-08-01'
+export const ARC_START = '2026-09-01'
 export const ARC_END = '2026-12-31'
 
 export const MONTHS = [
-  { key: '2026-08', label: 'August', short: 'Aug' },
   { key: '2026-09', label: 'September', short: 'Sep' },
   { key: '2026-10', label: 'October', short: 'Oct' },
   { key: '2026-11', label: 'November', short: 'Nov' },
