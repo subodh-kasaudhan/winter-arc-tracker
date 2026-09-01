@@ -47,7 +47,7 @@ export function HabitCard({
 
   return (
     <article
-      className="rounded-[28px] p-4 shadow-[0_8px_24px_rgba(28,25,23,0.06)]"
+      className="min-w-0 rounded-[28px] p-4 shadow-[0_8px_24px_rgba(28,25,23,0.06)]"
       style={{ background: pastel ? hexToSoft(habit.color) : 'var(--color-card)' }}
     >
       <div className="flex items-start gap-3">
