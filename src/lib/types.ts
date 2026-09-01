@@ -1,0 +1,40 @@
+export type Frequency = 'everyday' | number[]
+
+export type HabitIcon =
+  | 'sun'
+  | 'dumbbell'
+  | 'lotus'
+  | 'book'
+  | 'leaf'
+  | 'moon'
+  | 'run'
+  | 'drop'
+  | 'pen'
+  | 'flame'
+
+export type Habit = {
+  id: string
+  name: string
+  icon: HabitIcon
+  color: string
+  frequency: Frequency
+  createdAt: string
+}
+
+export type Checkin = {
+  habitId: string
+  date: string
+}
+
+export type Store = {
+  habits: Habit[]
+  checkins: Checkin[]
+  seeded: boolean
+}
+
+export type Tab = 'today' | 'weekly' | 'monthly' | 'arc'
+
+export type Progress = {
+  done: number
+  scheduled: number
+}

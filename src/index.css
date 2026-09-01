@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --color-ink: #1c1917;
+  --color-muted: #78716c;
+  --color-paper: #f6f3ee;
+  --color-card: #ffffff;
+  --color-leaf: #3d9b4a;
+  --color-leaf-dark: #2d7a38;
+  --color-medal: #f59e0b;
+  --color-line: #e7e1d8;
+}
+
+html,
+body,
+#root {
+  min-height: 100dvh;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+#root {
+  min-height: 100dvh;
+}
