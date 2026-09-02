@@ -15,25 +15,25 @@ export function WeekDots({
   onToggle: (date: string) => void
 }) {
   return (
-    <div className="mt-4 flex justify-between gap-1">
+    <div className="mt-4 grid grid-cols-7 gap-1">
       {dates.map((date) => {
         const scheduled = isScheduled(habit, date)
         const done = hasCheckin(checkins, habit.id, date)
         const locked = !canToggleDate(habit, date, today, done)
         return (
-          <div key={date} className="flex flex-1 flex-col items-center">
-            <span className="text-[11px] font-semibold text-muted">
+          <div key={date} className="flex min-w-0 flex-col items-center">
+            <span className="text-[10px] font-semibold text-muted">
               {dayShort(date)}
             </span>
             <button
               type="button"
               disabled={locked}
               onClick={() => onToggle(date)}
-              className="mt-0.5 rounded-2xl px-3 py-3 disabled:cursor-not-allowed"
+              className="mt-0.5 flex w-full min-w-0 items-center justify-center p-0 disabled:cursor-not-allowed"
               aria-label={`${habit.name} ${date}`}
             >
               <span
-                className="grid h-9 w-9 place-items-center rounded-full text-white"
+                className="grid aspect-square w-full max-w-9 place-items-center rounded-full text-white"
                 style={{
                   background: done
                     ? habit.color

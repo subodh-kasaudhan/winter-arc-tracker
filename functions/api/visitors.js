@@ -10,9 +10,12 @@ function parseCookie(header, name) {
 
 const STATS_KEY = 'visitor_stats'
 const CACHE_URL = 'https://winter-arc.internal/hustlers_today'
+const HITS_URL = 'https://winter-arc.internal/origin_hits/'
 const COUNT_CAP = 1000
 const COOKIE_MAX_AGE = 86400
-const LIVE_CACHE_SECONDS = 1800
+const LIVE_CACHE_SECONDS = 300
+const WORKERS_DAILY_LIMIT = 100_000
+const ORIGIN_STOP_AT = Math.floor(WORKERS_DAILY_LIMIT * 0.5)
 
 function utcDate(now = new Date()) {
   return now.toISOString().slice(0, 10)
@@ -55,8 +58,8 @@ function json(body, extraHeaders = {}, status = 200) {
   return new Response(JSON.stringify(body), { headers, status })
 }
 
-function cacheControl(capped) {
-  const maxAge = capped ? secondsUntilUtcMidnight() : LIVE_CACHE_SECONDS
+function cacheControl(untilMidnight) {
+  const maxAge = untilMidnight ? secondsUntilUtcMidnight() : LIVE_CACHE_SECONDS
   return `public, max-age=${maxAge}, s-maxage=${maxAge}`
 }
 
@@ -72,13 +75,37 @@ async function readCachedStats() {
   }
 }
 
-async function writeCachedStats(stats) {
+async function writeCachedStats(stats, untilMidnight = false) {
   try {
-    const capped = stats.today >= COUNT_CAP
+    const freeze = untilMidnight || stats.today >= COUNT_CAP
     await caches.default.put(
       CACHE_URL,
       new Response(JSON.stringify(stats), {
-        headers: { 'Cache-Control': cacheControl(capped) },
+        headers: { 'Cache-Control': cacheControl(freeze) },
+      }),
+    )
+  } catch {
+    // Cache is optional.
+  }
+}
+
+async function originHitsToday() {
+  try {
+    const hit = await caches.default.match(HITS_URL + utcDate())
+    if (!hit) return 0
+    const n = Number(await hit.text())
+    return Number.isFinite(n) ? n : 0
+  } catch {
+    return 0
+  }
+}
+
+async function recordOriginHit(current) {
+  try {
+    await caches.default.put(
+      HITS_URL + utcDate(),
+      new Response(String(current + 1), {
+        headers: { 'Cache-Control': `max-age=${secondsUntilUtcMidnight()}` },
       }),
     )
   } catch {
@@ -101,6 +128,14 @@ async function loadStats(env) {
   return { stats, fromCache: false }
 }
 
+async function serveCount(env, untilMidnight) {
+  const { stats } = await loadStats(env)
+  const body = payload(stats)
+  const freeze = untilMidnight || body.capped
+  if (freeze) await writeCachedStats(stats, true)
+  return json(body, { 'Cache-Control': cacheControl(freeze) })
+}
+
 export async function onRequestGet(context) {
   const { env } = context
   if (!env.VISITORS) {
@@ -112,11 +147,12 @@ export async function onRequestGet(context) {
   }
 
   try {
-    const { stats } = await loadStats(env)
-    const body = payload(stats)
-    return json(body, {
-      'Cache-Control': body.capped ? cacheControl(true) : cacheControl(false),
-    })
+    const hits = await originHitsToday()
+    if (hits >= ORIGIN_STOP_AT) {
+      return serveCount(env, true)
+    }
+    await recordOriginHit(hits)
+    return serveCount(env, false)
   } catch {
     return json(
       { count: null, ready: false, capped: false },
@@ -136,9 +172,14 @@ export async function onRequestPost(context) {
     )
   }
 
-  const already = parseCookie(request.headers.get('Cookie'), 'wa_clock')
-
   try {
+    const hits = await originHitsToday()
+    if (hits >= ORIGIN_STOP_AT) {
+      return serveCount(env, true)
+    }
+    await recordOriginHit(hits)
+
+    const already = parseCookie(request.headers.get('Cookie'), 'wa_clock')
     const { stats } = await loadStats(env)
 
     if (stats.today >= COUNT_CAP) {
@@ -153,7 +194,7 @@ export async function onRequestPost(context) {
     try {
       await env.VISITORS.put(STATS_KEY, JSON.stringify(stats))
     } catch {
-      await writeCachedStats({ ...stats, today: COUNT_CAP })
+      await writeCachedStats({ ...stats, today: COUNT_CAP }, true)
       return json(
         { count: COUNT_CAP, ready: true, capped: true },
         { 'Cache-Control': cacheControl(true) },

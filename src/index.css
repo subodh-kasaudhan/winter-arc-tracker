@@ -16,6 +16,7 @@ html,
 body,
 #root {
   min-height: 100dvh;
+  overflow-x: clip;
 }
 
 html.dark {
@@ -96,6 +97,18 @@ a.made-by {
 
 button:disabled {
   cursor: not-allowed;
+}
+
+button.heat-cell,
+button.heat-cell:not(:disabled):hover,
+button.heat-cell:not(:disabled):active,
+html.dark button.heat-cell:not(:disabled):hover {
+  box-shadow: none;
+  transform: none;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  padding: 0;
 }
 
 #root {

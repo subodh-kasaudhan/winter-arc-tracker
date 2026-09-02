@@ -2,6 +2,6 @@ name = "winter-arc-tracker"
 compatibility_date = "2026-09-01"
 pages_build_output_dir = "dist"
 
-# After you create a KV namespace named VISITORS in Cloudflare Pages,
-# bind it in the dashboard as VISITORS. Local/dev without KV is fine —
-# the visitor count shows as unavailable until that bind exists.
+[[kv_namespaces]]
+binding = "VISITORS"
+id = "085373cf16384ea7b4a8bfcc4b49661a"

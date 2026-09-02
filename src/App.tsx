@@ -30,6 +30,7 @@ import { applyTheme, loadTheme, type Theme } from './lib/theme'
 import type { Habit, Page, Store, Tab } from './lib/types'
 import {
   bumpLocalCount,
+  lastKnownVisitors,
   peekVisitors,
   syncClockIn,
   type VisitorSnapshot,
@@ -42,12 +43,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'arc', label: 'Arc' },
 ]
 
-const EMPTY_HUSTLERS: VisitorSnapshot = {
-  count: null,
-  ready: false,
-  capped: false,
-}
-
 export default function App() {
   const [store, setStore] = useState<Store>(() => loadStore())
   const [page, setPage] = useState<Page>('home')
@@ -55,7 +50,7 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [form, setForm] = useState<Habit | null | 'new'>(null)
   const [month, setMonth] = useState(() => currentArcMonth(todayLocal()))
-  const [hustlers, setHustlers] = useState<VisitorSnapshot>(EMPTY_HUSTLERS)
+  const [hustlers, setHustlers] = useState<VisitorSnapshot>(lastKnownVisitors)
   const [clockedIn, setClockedIn] = useState(() => hasClockedInToday())
   const [celebrating, setCelebrating] = useState(() => hasClockedInToday())
   const [theme, setTheme] = useState<Theme>(() => loadTheme())
@@ -72,16 +67,27 @@ export default function App() {
   }, [theme])
 
   useEffect(() => {
-    void peekVisitors().then(setHustlers)
+    let cancelled = false
+
+    async function refreshCount() {
+      const next = await peekVisitors()
+      if (!cancelled) setHustlers(next)
+    }
+
+    void refreshCount()
+
     const clock = loadClock()
     if (clock.pendingSync && hasClockedInToday(clock)) {
-      void syncClockIn(hustlers).then((next) => {
+      void syncClockIn(lastKnownVisitors()).then((next) => {
+        if (cancelled) return
         setHustlers(next)
         if (next.ready) markClockSynced()
       })
     }
-    // Only run on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   function update(next: Store) {
@@ -145,8 +151,8 @@ export default function App() {
   )
 
   return (
-    <div className="min-h-dvh bg-paper">
-      <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-paper shadow-[0_0_0_1px_rgba(28,25,23,0.04)] lg:max-w-none lg:shadow-none">
+    <div className="min-h-dvh overflow-x-clip bg-paper">
+      <div className="mx-auto flex min-h-dvh w-full min-w-0 max-w-[480px] flex-col bg-paper shadow-[0_0_0_1px_rgba(28,25,23,0.04)] lg:max-w-none lg:shadow-none">
         <header className="sticky top-0 z-20 bg-paper/95 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur lg:px-8">
           <div className="flex items-center justify-between lg:max-w-none">
             <button
@@ -246,7 +252,7 @@ export default function App() {
           ) : null}
         </header>
 
-        <main className="flex flex-1 flex-col gap-3 px-4 pb-28 lg:px-8">
+        <main className="flex min-w-0 flex-1 flex-col gap-3 px-4 pb-28 lg:px-8">
           {page === 'home' ? (
             <HomePage
               hustlers={hustlers}
@@ -308,7 +314,7 @@ export default function App() {
                   No habits yet. Tap + to add one.
                 </p>
               ) : (
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
                   {store.habits.map((habit) => (
                     <HabitCard
                       key={habit.id}
