@@ -180,9 +180,10 @@ export async function onRequestPost(context) {
     await recordOriginHit(hits)
 
     const already = parseCookie(request.headers.get('Cookie'), 'wa_clock')
-    const { stats } = await loadStats(env)
+    const stats = normalizeStats(await env.VISITORS.get(STATS_KEY))
 
     if (stats.today >= COUNT_CAP) {
+      await writeCachedStats(stats, true)
       return json(payload(stats), { 'Cache-Control': cacheControl(true) })
     }
 

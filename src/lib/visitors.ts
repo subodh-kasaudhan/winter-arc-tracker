@@ -99,6 +99,14 @@ export async function syncClockIn(
     if (!res.ok) return previous
     const snapshot = parseBody(await res.json())
     if (!snapshot) return previous
+    if (
+      previous.count !== null &&
+      snapshot.count !== null &&
+      snapshot.count < previous.count &&
+      !snapshot.capped
+    ) {
+      return previous
+    }
     remember(snapshot)
     return snapshot
   } catch {
