@@ -81,8 +81,9 @@ export default function App() {
     void refreshCount()
 
     const clock = loadClock()
-    if (clock.pendingSync && hasClockedInToday(clock)) {
-      void syncClockIn(lastKnownVisitors()).then((next) => {
+    const known = lastKnownVisitors()
+    if (clock.pendingSync && hasClockedInToday(clock) && !known.capped && !known.frozen) {
+      void syncClockIn(known).then((next) => {
         if (cancelled) return
         setHustlers(next)
         if (next.ready) markClockSynced()
@@ -105,9 +106,14 @@ export default function App() {
 
   async function handleClockIn() {
     if (hasClockedInToday()) return
-    markClockedIn(true)
+    const skipNetwork = hustlers.capped || hustlers.frozen === true
+    markClockedIn(!skipNetwork)
     setClockedIn(true)
     setCelebrating(true)
+    if (skipNetwork) {
+      markClockSynced()
+      return
+    }
     const local = bumpLocalCount(hustlers)
     setHustlers(local)
     const synced = await syncClockIn(local)
