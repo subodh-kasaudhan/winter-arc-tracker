@@ -44,3 +44,7 @@ export function markClockSynced(): ClockState {
   saveClock(next)
   return next
 }
+
+export function clearClock(): void {
+  localStorage.removeItem(CLOCK_KEY)
+}

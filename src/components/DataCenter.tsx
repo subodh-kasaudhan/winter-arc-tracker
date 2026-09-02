@@ -22,7 +22,8 @@ export function DataCenter({
       </div>
       <h2 className="mt-1 text-2xl font-extrabold">Your backups</h2>
       <p className="mt-2 text-sm text-muted">
-        Progress stays on this device. Export before you clear browser data.
+        Progress stays on this device. Export includes habits, check-ins, and
+        today&apos;s Clock In. Export before you clear browser data.
       </p>
       <div className="mt-5 flex flex-col gap-2">
         <button

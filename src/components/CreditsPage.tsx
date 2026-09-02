@@ -13,7 +13,7 @@ export function CreditsPage() {
         <div className="mt-5 sm:mt-0 sm:ml-6">
           <h2 className="text-2xl font-extrabold sm:text-3xl">Hi, I am Shivam</h2>
           <p className="mt-3 text-[15px] leading-relaxed text-ink/80">
-            A full-time software engineer, and a content creator for fun. This
+            An IIT Kanpur graduate, a full-time software engineer, and a content creator for fun. This
             tracker is a small gift from me to every hustler who refuses to give up on
             their dreams.
           </p>

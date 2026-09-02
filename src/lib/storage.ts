@@ -1,4 +1,5 @@
 import type { Habit, Store } from './types'
+import { clearClock, loadClock, saveClock, type ClockState } from './clock'
 
 export const STORAGE_KEY = 'winter-arc-2026'
 
@@ -90,11 +91,22 @@ export function saveStore(store: Store): void {
 export function resetStore(): Store {
   const next = emptyStore()
   saveStore(next)
+  clearClock()
   return next
 }
 
+function readClock(value: unknown): ClockState | null {
+  if (!value || typeof value !== 'object') return null
+  const c = value as ClockState
+  if (c.utcDate !== null && typeof c.utcDate !== 'string') return null
+  return {
+    utcDate: typeof c.utcDate === 'string' ? c.utcDate : null,
+    pendingSync: false,
+  }
+}
+
 export function exportStore(store: Store): string {
-  return JSON.stringify(store, null, 2)
+  return JSON.stringify({ ...store, clock: loadClock() }, null, 2)
 }
 
 export function importStore(raw: string): Store {
@@ -106,6 +118,8 @@ export function importStore(raw: string): Store {
     seeded: true,
   }
   saveStore(next)
+  const clock = readClock((parsed as { clock?: unknown }).clock)
+  if (clock) saveClock(clock)
   return next
 }
 

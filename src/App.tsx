@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CreditsPage } from './components/CreditsPage'
 import { DataCenter } from './components/DataCenter'
 import { Drawer } from './components/Drawer'
@@ -14,6 +14,7 @@ import {
   markClockedIn,
   markClockSynced,
 } from './lib/clock'
+import { hasCelebratedTab, markCelebratedTab } from './lib/celebrate'
 import {
   ARC_END,
   ARC_START,
@@ -21,6 +22,7 @@ import {
   currentArcMonth,
   monthDates,
   MONTHS,
+  percent,
   periodProgress,
   todayLocal,
   weekDates,
@@ -55,6 +57,8 @@ export default function App() {
   const [celebrating, setCelebrating] = useState(() => hasClockedInToday())
   const [theme, setTheme] = useState<Theme>(() => loadTheme())
   const [winterBurst, setWinterBurst] = useState(false)
+  const [completeBurst, setCompleteBurst] = useState(false)
+  const seenProgress = useRef<Partial<Record<Tab, number>>>({})
   const today = todayLocal()
   const week = useMemo(() => weekDates(today), [today])
 
@@ -77,8 +81,9 @@ export default function App() {
     void refreshCount()
 
     const clock = loadClock()
-    if (clock.pendingSync && hasClockedInToday(clock)) {
-      void syncClockIn(lastKnownVisitors()).then((next) => {
+    const known = lastKnownVisitors()
+    if (clock.pendingSync && hasClockedInToday(clock) && !known.capped && !known.frozen) {
+      void syncClockIn(known).then((next) => {
         if (cancelled) return
         setHustlers(next)
         if (next.ready) markClockSynced()
@@ -101,9 +106,14 @@ export default function App() {
 
   async function handleClockIn() {
     if (hasClockedInToday()) return
-    markClockedIn(true)
+    const skipNetwork = hustlers.capped || hustlers.frozen === true
+    markClockedIn(!skipNetwork)
     setClockedIn(true)
     setCelebrating(true)
+    if (skipNetwork) {
+      markClockSynced()
+      return
+    }
     const local = bumpLocalCount(hustlers)
     setHustlers(local)
     const synced = await syncClockIn(local)
@@ -149,6 +159,19 @@ export default function App() {
     range.end,
     today,
   )
+  const progressPct = percent(progress)
+
+  useEffect(() => {
+    if (page !== 'progress') return
+    const prev = seenProgress.current[tab] ?? 0
+    seenProgress.current[tab] = progressPct
+    if (progress.scheduled === 0 || progressPct < 100 || prev >= 100) return
+    if (hasCelebratedTab(today, tab)) return
+    markCelebratedTab(today, tab)
+    setCompleteBurst(true)
+    const id = window.setTimeout(() => setCompleteBurst(false), 5000)
+    return () => window.clearTimeout(id)
+  }, [page, tab, progressPct, progress.scheduled, today])
 
   return (
     <div className="min-h-dvh overflow-x-clip bg-paper">
@@ -271,6 +294,8 @@ export default function App() {
               onImport={(text) => {
                 try {
                   update(importStore(text))
+                  setClockedIn(hasClockedInToday())
+                  setCelebrating(hasClockedInToday())
                 } catch {
                   alert('That file is not a valid Winter Arc backup.')
                 }
@@ -278,6 +303,8 @@ export default function App() {
               onReset={() => {
                 if (confirm('Reset all habits and check-ins on this device?')) {
                   update(resetStore())
+                  setClockedIn(false)
+                  setCelebrating(false)
                 }
               }}
             />
@@ -402,7 +429,11 @@ export default function App() {
         />
       ) : null}
 
-      {winterBurst ? <WinterBurst /> : null}
+      {completeBurst ? (
+        <WinterBurst message="Congratulations! Come back tomorrow" />
+      ) : winterBurst ? (
+        <WinterBurst />
+      ) : null}
     </div>
   )
 }
