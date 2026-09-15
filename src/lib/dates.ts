@@ -155,7 +155,10 @@ export function streakFor(
   habit: Habit,
   checkins: Checkin[],
   today: string,
+  hideSeptember = false,
 ): number {
+  const start = visibleArcStart(hideSeptember)
+  if (today < start) return 0
   const done = new Set(
     checkins.filter((c) => c.habitId === habit.id).map((c) => c.date),
   )
@@ -164,7 +167,7 @@ export function streakFor(
     cursor = addDays(today, -1)
   }
   let count = 0
-  while (cursor >= ARC_START) {
+  while (cursor >= start) {
     if (!isScheduled(habit, cursor)) {
       cursor = addDays(cursor, -1)
       continue

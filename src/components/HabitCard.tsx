@@ -43,7 +43,7 @@ export function HabitCard({
   onToggle: (date: string) => void
   onEdit: () => void
 }) {
-  const streak = streakFor(habit, checkins, today)
+  const streak = streakFor(habit, checkins, today, hideSeptember)
   const todayDone = hasCheckin(checkins, habit.id, today)
   const pastel = tab === 'weekly' || tab === 'today'
 
