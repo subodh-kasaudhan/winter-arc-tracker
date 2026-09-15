@@ -4,6 +4,7 @@ import {
   hasCheckin,
   isScheduled,
   monthGrid,
+  visibleArcStart,
 } from '../lib/dates'
 import type { Checkin, Habit } from '../lib/types'
 
@@ -88,14 +89,16 @@ export function ArcHeatmap({
   habit,
   checkins,
   today,
+  hideSeptember = false,
   onToggle,
 }: {
   habit: Habit
   checkins: Checkin[]
   today: string
+  hideSeptember?: boolean
   onToggle: (date: string) => void
 }) {
-  const weeks = arcWeekColumns()
+  const weeks = arcWeekColumns(visibleArcStart(hideSeptember))
   return (
     <div className="mt-3 w-full min-w-0">
       <div

@@ -46,6 +46,7 @@ export type Store = {
   habits: Habit[]
   checkins: Checkin[]
   seeded: boolean
+  hideSeptember: boolean
 }
 
 export type Tab = 'today' | 'weekly' | 'monthly' | 'arc'

@@ -29,6 +29,7 @@ export function HabitCard({
   tab,
   weekDates,
   monthKey,
+  hideSeptember = false,
   onToggle,
   onEdit,
 }: {
@@ -38,6 +39,7 @@ export function HabitCard({
   tab: Tab
   weekDates: string[]
   monthKey: string
+  hideSeptember?: boolean
   onToggle: (date: string) => void
   onEdit: () => void
 }) {
@@ -137,6 +139,7 @@ export function HabitCard({
           habit={habit}
           checkins={checkins}
           today={today}
+          hideSeptember={hideSeptember}
           onToggle={onToggle}
         />
       ) : null}

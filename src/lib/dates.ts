@@ -2,6 +2,11 @@ import type { Checkin, Habit, Progress } from './types'
 
 export const ARC_START = '2026-09-01'
 export const ARC_END = '2026-12-31'
+export const OCT_START = '2026-10-01'
+
+export function visibleArcStart(hideSeptember: boolean): string {
+  return hideSeptember ? OCT_START : ARC_START
+}
 
 export const MONTHS = [
   { key: '2026-09', label: 'September', short: 'Sep' },
@@ -117,9 +122,9 @@ export function monthGrid(key: string): (string | null)[] {
   return [...Array<string | null>(mondayIndex).fill(null), ...dates]
 }
 
-export function arcDates(): string[] {
+export function arcDates(start = ARC_START): string[] {
   const out: string[] = []
-  let cursor = ARC_START
+  let cursor = start
   while (cursor <= ARC_END) {
     out.push(cursor)
     cursor = addDays(cursor, 1)
@@ -127,10 +132,10 @@ export function arcDates(): string[] {
   return out
 }
 
-export function arcWeekColumns(): (string | null)[][] {
-  const dates = arcDates()
+export function arcWeekColumns(start = ARC_START): (string | null)[][] {
+  const dates = arcDates(start)
   const firstMondayPad = (() => {
-    const startDow = parseDate(ARC_START).getDay()
+    const startDow = parseDate(start).getDay()
     return startDow === 0 ? 6 : startDow - 1
   })()
   const cells: (string | null)[] = [

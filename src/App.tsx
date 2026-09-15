@@ -17,7 +17,6 @@ import {
 import { hasCelebratedTab, markCelebratedTab } from './lib/celebrate'
 import {
   ARC_END,
-  ARC_START,
   canToggleDate,
   currentArcMonth,
   monthDates,
@@ -25,6 +24,7 @@ import {
   percent,
   periodProgress,
   todayLocal,
+  visibleArcStart,
   weekDates,
 } from './lib/dates'
 import { downloadBackup, importStore, loadStore, resetStore, saveStore } from './lib/storage'
@@ -149,8 +149,12 @@ export default function App() {
         label: `${MONTHS.find((m) => m.key === month)?.label ?? 'Month'} progress`,
       }
     }
-    return { start: ARC_START, end: ARC_END, label: 'Full Winter Arc' }
-  }, [tab, today, week, month])
+    return {
+      start: visibleArcStart(store.hideSeptember),
+      end: ARC_END,
+      label: store.hideSeptember ? 'Winter Arc(Oct – Dec)' : 'Full Winter Arc',
+    }
+  }, [tab, today, week, month, store.hideSeptember])
 
   const progress = periodProgress(
     store.habits,
@@ -316,7 +320,29 @@ export default function App() {
                 <div className="mb-3 flex justify-end">
                   <MadeBy />
                 </div>
-                <ProgressPie progress={progress} label={range.label} />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <ProgressPie progress={progress} label={range.label} />
+                  </div>
+                  {tab === 'arc' ? (
+                    <label className="flex shrink-0 cursor-pointer items-center gap-2 text-right text-sm font-bold text-ink">
+                      <span>
+                        <span className="block">Hide September</span>
+                        <span className="block text-xs font-semibold text-muted">
+                          Arc shows Oct–Dec
+                        </span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 shrink-0 accent-leaf"
+                        checked={store.hideSeptember}
+                        onChange={(e) =>
+                          update({ ...store, hideSeptember: e.target.checked })
+                        }
+                      />
+                    </label>
+                  ) : null}
+                </div>
               </section>
 
               {tab === 'monthly' ? (
@@ -351,6 +377,7 @@ export default function App() {
                       tab={tab}
                       weekDates={week}
                       monthKey={month}
+                      hideSeptember={store.hideSeptember}
                       onToggle={(date) => toggleCheckin(habit.id, date)}
                       onEdit={() => setForm(habit)}
                     />

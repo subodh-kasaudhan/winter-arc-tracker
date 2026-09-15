@@ -62,6 +62,16 @@ function emptyStore(): Store {
     habits: PRESET_HABITS.map((h) => ({ ...h })),
     checkins: [],
     seeded: true,
+    hideSeptember: false,
+  }
+}
+
+function normalizeStore(value: Store): Store {
+  return {
+    habits: value.habits,
+    checkins: value.checkins,
+    seeded: value.seeded === true || value.habits.length > 0,
+    hideSeptember: value.hideSeptember === true,
   }
 }
 
@@ -78,7 +88,7 @@ export function loadStore(): Store {
     const parsed: unknown = JSON.parse(raw)
     if (!isStore(parsed)) return emptyStore()
     if (!parsed.seeded && parsed.habits.length === 0) return emptyStore()
-    return parsed
+    return normalizeStore(parsed)
   } catch {
     return emptyStore()
   }
@@ -112,11 +122,7 @@ export function exportStore(store: Store): string {
 export function importStore(raw: string): Store {
   const parsed: unknown = JSON.parse(raw)
   if (!isStore(parsed)) throw new Error('Invalid backup file')
-  const next: Store = {
-    habits: parsed.habits,
-    checkins: parsed.checkins,
-    seeded: true,
-  }
+  const next = { ...normalizeStore(parsed), seeded: true }
   saveStore(next)
   const clock = readClock((parsed as { clock?: unknown }).clock)
   if (clock) saveClock(clock)
