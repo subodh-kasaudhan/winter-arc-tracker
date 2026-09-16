@@ -290,7 +290,7 @@ export default function App() {
                 onClockIn={() => void handleClockIn()}
                 onOpenProgress={() => go('progress')}
               />
-              <GetTheApp />
+              <GetTheApp onExportBackup={() => downloadBackup(store)} />
             </>
           ) : null}
 

@@ -64,7 +64,7 @@ export function DataCenter({
           }}
         />
       </section>
-      <GetTheApp />
+      <GetTheApp onExportBackup={onExport} />
     </>
   )
 }
