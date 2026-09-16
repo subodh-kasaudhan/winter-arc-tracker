@@ -1,9 +1,13 @@
 import { useState } from 'react'
+import { useInstalledApp } from '../lib/installedApp'
 
 type AppTab = 'android' | 'iphone'
 
 export function GetTheApp({ onExportBackup }: { onExportBackup: () => void }) {
+  const installed = useInstalledApp()
   const [tab, setTab] = useState<AppTab>('android')
+
+  if (installed) return null
 
   return (
     <section className="rounded-[28px] bg-card p-5 shadow-[0_8px_24px_rgba(28,25,23,0.06)]">
