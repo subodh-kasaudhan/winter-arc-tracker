@@ -3,6 +3,7 @@ import { CreditsPage } from './components/CreditsPage'
 import { DataCenter } from './components/DataCenter'
 import { Drawer } from './components/Drawer'
 import { HabitCard } from './components/HabitCard'
+import { GetTheApp } from './components/GetTheApp'
 import { HabitForm } from './components/HabitForm'
 import { HomePage } from './components/HomePage'
 import { MadeBy } from './components/MadeBy'
@@ -281,13 +282,16 @@ export default function App() {
 
         <main className="flex min-w-0 flex-1 flex-col gap-3 px-4 pb-28 lg:px-8">
           {page === 'home' ? (
-            <HomePage
-              hustlers={hustlers}
-              clockedIn={clockedIn}
-              celebrating={celebrating}
-              onClockIn={() => void handleClockIn()}
-              onOpenProgress={() => go('progress')}
-            />
+            <>
+              <HomePage
+                hustlers={hustlers}
+                clockedIn={clockedIn}
+                celebrating={celebrating}
+                onClockIn={() => void handleClockIn()}
+                onOpenProgress={() => go('progress')}
+              />
+              <GetTheApp />
+            </>
           ) : null}
 
           {page === 'credits' ? <CreditsPage /> : null}

@@ -15,6 +15,14 @@ dist-ssr
 .s20-shots
 scripts
 
+# Android signing and TWA build (APK binary is committed under public/downloads)
+android-signing/
+twa-build/
+.jdk/
+*.jks
+*.keystore
+local.properties
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

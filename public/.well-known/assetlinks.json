@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.winterarc.tracker",
+      "sha256_cert_fingerprints": [
+        "C9:12:8A:55:41:C8:25:4A:4D:3F:7C:F8:83:2E:58:E9:9C:76:3E:05:4C:5F:85:A1:E8:82:44:22:79:B6:41:53"
+      ]
+    }
+  }
+]

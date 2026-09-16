@@ -1,0 +1,39 @@
+{
+  "packageId": "app.winterarc.tracker",
+  "host": "winter-arc-tracker.pages.dev",
+  "name": "Winter Arc 2026",
+  "launcherName": "Winter Arc",
+  "display": "standalone",
+  "themeColor": "#3D9B4A",
+  "themeColorDark": "#1A2E24",
+  "navigationColor": "#3D9B4A",
+  "navigationColorDark": "#1A2E24",
+  "backgroundColor": "#F6F3EE",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://winter-arc-tracker.pages.dev/icon-512.png",
+  "maskableIconUrl": "https://winter-arc-tracker.pages.dev/icon-512.png",
+  "appVersion": "1",
+  "appVersionCode": 1,
+  "appVersionName": "1",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://winter-arc-tracker.pages.dev/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": false,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://winter-arc-tracker.pages.dev/",
+  "minSdkVersion": 21,
+  "orientation": "default",
+  "fingerprints": [
+    {
+      "name": "release",
+      "value": "C9:12:8A:55:41:C8:25:4A:4D:3F:7C:F8:83:2E:58:E9:9C:76:3E:05:4C:5F:85:A1:E8:82:44:22:79:B6:41:53"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}
